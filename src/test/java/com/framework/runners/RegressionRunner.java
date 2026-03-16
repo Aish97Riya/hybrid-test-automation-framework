@@ -20,6 +20,7 @@ import org.testng.annotations.DataProvider;
             "pretty",
             "html:test-output/cucumber-reports/regression-report.html",
             "json:test-output/cucumber-reports/regression.json",
+                "junit:test-output/cucumber-reports/regression.xml",
             "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         },
         monochrome = true
