@@ -19,6 +19,7 @@ import io.cucumber.testng.CucumberOptions;
             "pretty",
             "html:test-output/cucumber-reports/smoke-report.html",
             "json:test-output/cucumber-reports/smoke.json",
+                "junit:test-output/cucumber-reports/smoke.xml",
             "com.aventstack.extentreports.cucumber.adapter.ExtentCucumberAdapter:"
         },
         monochrome = true
