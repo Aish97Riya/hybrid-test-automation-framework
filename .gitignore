@@ -1,0 +1,54 @@
+# ============================================================
+# .gitignore - Hybrid Automation Framework
+# ============================================================
+
+# ── Maven ──────────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# ── Test Output (generated at runtime) ─────────────────────
+test-output/
+test-results/
+*.html
+*.json
+!src/**/*.json
+
+# ── Screenshots ─────────────────────────────────────────────
+screenshots/
+
+# ── Logs ────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── IDE ─────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.vscode/
+*.swp
+*.swo
+
+# ── OS ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── WebDriverManager cache ──────────────────────────────────
+.wdm/
+
+# ── Environment secrets ─────────────────────────────────────
+*.env
+secrets.properties
+credentials.properties
