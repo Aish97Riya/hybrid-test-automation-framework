@@ -1,85 +1,68 @@
 // ============================================================
-// Jenkinsfile - Declarative Pipeline
-// Framework: Hybrid Automation (Selenium + RestAssured + Cucumber)
-// Features:
-//   - Multi-environment support (QA / Stage / Prod)
-//   - Parallel UI + API execution
-//   - ExtentReports HTML publishing
-//   - Cucumber report publishing
-//   - Slack notifications on pass/fail/completion
+// Jenkinsfile - Declarative Pipeline (Windows Compatible)
 // ============================================================
 
 pipeline {
 
-    agent any  // Uses Jenkins Built-in Agent
+    agent any
 
-    // ── Parameters (configurable per build) ─────────────────
     parameters {
         choice(
             name: 'ENVIRONMENT',
             choices: ['qa', 'stage', 'prod'],
-            description: 'Target environment for test execution'
+            description: 'Target environment'
         )
         choice(
             name: 'BROWSER',
             choices: ['chrome', 'firefox', 'edge'],
-            description: 'Browser for UI test execution'
+            description: 'Browser for UI tests'
         )
         choice(
             name: 'TAGS',
             choices: ['@Smoke', '@Regression', '@UI', '@API', '@API_Pet', '@Login', '@Cart'],
-            description: 'Cucumber tag filter for test execution'
+            description: 'Cucumber tag filter'
         )
         booleanParam(
             name: 'HEADLESS',
             defaultValue: true,
-            description: 'Run browser in headless mode (recommended for CI)'
+            description: 'Run browser in headless mode'
         )
         booleanParam(
             name: 'SEND_SLACK_NOTIFICATION',
             defaultValue: true,
-            description: 'Send Slack notification after pipeline execution'
+            description: 'Send Slack notification after execution'
         )
     }
 
-    // ── Environment Variables ────────────────────────────────
     environment {
-        MAVEN_OPTS          = '-Xmx2048m -XX:MaxPermSize=512m'
+        MAVEN_OPTS          = '-Xmx2048m'
         REPORT_DIR          = 'test-output/extent-reports'
         CUCUMBER_REPORT_DIR = 'test-output/cucumber-reports'
         SLACK_CHANNEL       = '#automationlearningchannel'
-        SLACK_CREDENTIALS   ='OAUTHBOTTokenAutomationlearning'
-        // SLACK_CREDENTIALS stored in Jenkins Credentials store as 'slack-webhook-url'
     }
 
-    // ── Build Tools ──────────────────────────────────────────
     tools {
-        maven 'MAVEN_HOME'   // Matches Jenkins Global Tool Configuration name
-        jdk   'JAVA_HOME'      // Matches Jenkins Global Tool Configuration name
+        maven 'MAVEN_HOME'
+        jdk   'JAVA_HOME'
     }
 
-    // ── Pipeline Stages ─────────────────────────────────────
     stages {
 
-        // 1. Checkout source code
         stage('Checkout') {
             steps {
-                echo "═══════════════════════════════════════"
-                echo " Checking out source code..."
-                echo " Branch: ${env.GIT_BRANCH}"
-                echo " Commit: ${env.GIT_COMMIT}"
-                echo "═══════════════════════════════════════"
+                echo "Checking out source code..."
+                echo "Branch: ${env.GIT_BRANCH}"
+                echo "Commit: ${env.GIT_COMMIT}"
                 checkout scm
             }
         }
 
-        // 2. Print build configuration
         stage('Build Info') {
             steps {
                 echo """
                 ╔══════════════════════════════════════╗
                   HYBRID AUTOMATION FRAMEWORK
-                  Build: #${env.BUILD_NUMBER}
+                  Build       : #${env.BUILD_NUMBER}
                   Environment : ${params.ENVIRONMENT}
                   Browser     : ${params.BROWSER}
                   Tags        : ${params.TAGS}
@@ -90,79 +73,63 @@ pipeline {
             }
         }
 
-        // 3. Compile
         stage('Compile') {
             steps {
                 echo "Compiling project..."
-                sh 'mvn clean compile test-compile -q'
+                bat 'mvn clean compile test-compile -q'
             }
         }
 
-        // 4. Execute Tests
         stage('Execute Tests') {
             steps {
                 echo "Executing tests: env=[${params.ENVIRONMENT}] tags=[${params.TAGS}]"
-                sh """
-                    mvn test \
-                        -Denv=${params.ENVIRONMENT} \
-                        -Dbrowser=${params.BROWSER} \
-                        -Dheadless=${params.HEADLESS} \
-                        -Dcucumber.filter.tags="${params.TAGS}" \
-                        -Dmaven.test.failure.ignore=true \
+                bat """
+                    mvn test ^
+                        -Denv=${params.ENVIRONMENT} ^
+                        -Dbrowser=${params.BROWSER} ^
+                        -Dheadless=${params.HEADLESS} ^
+                        -Dcucumber.filter.tags="${params.TAGS}" ^
                         --no-transfer-progress
                 """
             }
         }
 
-        // 5. Publish Reports
         stage('Publish Reports') {
             steps {
                 echo "Publishing test reports..."
-
-                // Publish ExtentReports HTML
                 publishHTML(target: [
-                    allowMissing         : false,
+                    allowMissing         : true,
                     alwaysLinkToLastBuild: true,
                     keepAll              : true,
                     reportDir            : "${env.REPORT_DIR}",
                     reportFiles          : '*.html',
-                    reportName           : 'Extent Test Report',
-                    reportTitles         : 'Hybrid Automation Report'
+                    reportName           : 'Extent Test Report'
                 ])
-
-                // Publish Cucumber HTML Report
                 publishHTML(target: [
                     allowMissing         : true,
                     alwaysLinkToLastBuild: true,
                     keepAll              : true,
                     reportDir            : "${env.CUCUMBER_REPORT_DIR}",
                     reportFiles          : 'cucumber.html',
-                    reportName           : 'Cucumber Report',
-                    reportTitles         : 'Cucumber BDD Report'
+                    reportName           : 'Cucumber Report'
                 ])
             }
         }
 
-        // 6. Archive Artifacts
         stage('Archive Artifacts') {
             steps {
-                echo "Archiving test artifacts..."
-                archiveArtifacts artifacts: """
-                    test-output/**/*.html,
-                    test-output/**/*.json,
-                    test-output/**/*.xml,
-                    test-output/screenshots/**/*.png,
-                    test-output/logs/**/*.log
-                """, allowEmptyArchive: true, fingerprint: true
+                echo "Archiving artifacts..."
+                archiveArtifacts artifacts: 'test-output/**/*',
+                                 allowEmptyArchive: true,
+                                 fingerprint: true
             }
         }
     }
 
-    // ── Post Actions (always run) ────────────────────────────
     post {
 
         always {
-            echo "Pipeline execution complete. Publishing JUnit results..."
+            echo "Pipeline complete. Publishing JUnit results..."
             junit(
                 testResults: 'test-output/cucumber-reports/*.xml',
                 allowEmptyResults: true
@@ -170,7 +137,7 @@ pipeline {
         }
 
         success {
-            echo "✔ Pipeline PASSED"
+            echo "Pipeline PASSED"
             script {
                 if (params.SEND_SLACK_NOTIFICATION) {
                     sendSlackNotification('SUCCESS')
@@ -179,7 +146,7 @@ pipeline {
         }
 
         failure {
-            echo "✘ Pipeline FAILED"
+            echo "Pipeline FAILED"
             script {
                 if (params.SEND_SLACK_NOTIFICATION) {
                     sendSlackNotification('FAILURE')
@@ -188,51 +155,37 @@ pipeline {
         }
 
         unstable {
-            echo "⚠ Pipeline UNSTABLE (some tests failed)"
+            echo "Pipeline UNSTABLE"
             script {
                 if (params.SEND_SLACK_NOTIFICATION) {
                     sendSlackNotification('UNSTABLE')
                 }
             }
         }
-
-        cleanup {
-            echo "Cleaning workspace..."
-            cleanWs(
-                cleanWhenSuccess: false,
-                cleanWhenFailure: false,
-                cleanWhenUnstable: false,
-                deleteDirs: true,
-                patterns: [[pattern: 'test-output/screenshots/**', type: 'EXCLUDE']]
-            )
-        }
     }
 }
 
-// ── Slack Notification Helper ────────────────────────────────
+// ── Slack Notification ───────────────────────────────────────
 def sendSlackNotification(String buildStatus) {
 
     def colorMap = [
-        'SUCCESS'  : '#36a64f',   // Green
-        'FAILURE'  : '#cc0000',   // Red
-        'UNSTABLE' : '#ffaa00',   // Orange
-        'ABORTED'  : '#808080'    // Grey
+        'SUCCESS'  : '#36a64f',
+        'FAILURE'  : '#cc0000',
+        'UNSTABLE' : '#ffaa00'
     ]
 
     def emojiMap = [
         'SUCCESS'  : '✅',
         'FAILURE'  : '❌',
-        'UNSTABLE' : '⚠️',
-        'ABORTED'  : '🚫'
+        'UNSTABLE' : '⚠️'
     ]
 
-    def color  = colorMap.get(buildStatus, '#808080')
-    def emoji  = emojiMap.get(buildStatus, '❓')
-    def jobUrl = "${env.BUILD_URL}"
+    def color   = colorMap.get(buildStatus, '#808080')
+    def emoji   = emojiMap.get(buildStatus, '❓')
+    def jobUrl  = "${env.BUILD_URL}"
 
     def message = """
 ${emoji} *Hybrid Automation Framework - Build ${buildStatus}*
-
 *Job:*         ${env.JOB_NAME}
 *Build:*       #${env.BUILD_NUMBER}
 *Environment:* ${params.ENVIRONMENT?.toUpperCase()}
@@ -240,16 +193,14 @@ ${emoji} *Hybrid Automation Framework - Build ${buildStatus}*
 *Tags:*        ${params.TAGS}
 *Duration:*    ${currentBuild.durationString}
 *Status:*      ${buildStatus}
-
-📊 *Reports:* <${jobUrl}Extent_20Test_20Report|Extent Report> | <${jobUrl}Cucumber_20Report|Cucumber Report>
 🔗 *Build URL:* ${jobUrl}
     """.stripIndent()
 
     slackSend(
-        channel    : env.SLACK_CHANNEL,
-        color      : color,
-        message    : message,
-        tokenCredentialId: env.SLACK_CREDENTIALS_ID
+        channel             : env.SLACK_CHANNEL,
+        color               : color,
+        message             : message,
+        tokenCredentialId   : 'OAUTHBOTTokenAutomationlearning'
     )
 
     echo "Slack notification sent to: ${env.SLACK_CHANNEL} | Status: ${buildStatus}"
