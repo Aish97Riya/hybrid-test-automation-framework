@@ -54,8 +54,8 @@ pipeline {
 
     // ── Build Tools ──────────────────────────────────────────
     tools {
-        maven 'Maven_3.9'   // Matches Jenkins Global Tool Configuration name
-        jdk   'JDK_11'      // Matches Jenkins Global Tool Configuration name
+        maven 'MAVEN_HOME'   // Matches Jenkins Global Tool Configuration name
+        jdk   'JAVA_HOME'      // Matches Jenkins Global Tool Configuration name
     }
 
     // ── Pipeline Stages ─────────────────────────────────────
