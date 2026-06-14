@@ -388,5 +388,3 @@ Thread safety guaranteed by:
 
 **Udhay** — SDET Lead  
 GitHub: [github.com/Udhay](https://github.com/Udhay)
-
-
